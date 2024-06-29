@@ -1,14 +1,20 @@
 import { useRef, useState } from "react";
 import Header from "./Header";
 import { checkValidData } from "../utils/validate";
-import { createUserWithEmailAndPassword,signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword,signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "../utils/firebase";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice";
 
 const Login = () =>{
+    const navigate = useNavigate();
     const [isSignInForm, setIsSignInForm] = useState(true);
     const email = useRef(null);
     const password = useRef(null);
     const [errorMessage,setErrorMessage] = useState(null);
+    const name = useRef(null);
+    const dispatch = useDispatch();
 
     const handleButtonClick = () =>{
         //validate form data
@@ -22,6 +28,21 @@ const Login = () =>{
                 // Signed up 
                 const user = userCredential.user;
                 console.log(user);
+                console.log(auth);
+                updateProfile(user, {
+                    displayName: name.current.value
+                  }).then(() => {
+                    const {uid,email,displayName} = auth.currentUser;
+                    console.log(auth);
+                    dispatch(addUser({uid:uid,email:email,displayName:displayName}))
+                    navigate("/browse");
+                    // Profile updated!
+                    // ...
+                  }).catch((error) => {
+                    // An error occurred
+                    // ...
+                    setErrorMessage(error.message);
+                  });
                 // ...
             })
             .catch((error) => {
@@ -37,6 +58,7 @@ const Login = () =>{
                 // Signed in 
                 const user = userCredential.user;
                 console.log(user);
+                navigate("/browse");
                 // ...
             })
             .catch((error) => {
@@ -58,7 +80,7 @@ const Login = () =>{
             </div>
             <form onSubmit={(e) => e.preventDefault()} className="absolute p-12 bg-black w-3/12 my-36 mx-auto right-0 left-0 row text-white bg-opacity-80">
                 <h1 className="font-bold text-3xl py-2">{isSignInForm ? "Sign In": "Sign Up"}</h1>
-                {isSignInForm && <input type="text" placeholder="Full Name" className="p-4 my-4 w-4/5 bg-gray-300 rounded-lg"/>}
+                {!isSignInForm && <input type="text" placeholder="Full Name" className="p-4 my-4 w-4/5 bg-gray-300 rounded-lg"/>}
                 <input ref={email} type="text" placeholder="Email Address" className="p-4 my-4 w-4/5 bg-gray-300 rounded-lg"/>
                 <input ref={password}type="password" placeholder="Password" className="p-4 my-4 w-4/5 bg-gray-300 rounded-lg"/>
                 {errorMessage && <p className="text-red-500 font-bold text-lg p-2">{errorMessage}</p>}
